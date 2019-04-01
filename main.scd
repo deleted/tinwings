@@ -3,8 +3,8 @@ s.quit;
 s.boot;
 
 s.waitForBoot{
-	MIDIClient.init;
-	MIDIIn.connectAll;
+    MIDIClient.init;
+    MIDIIn.connectAll;
 };
 
 s.waitForBoot{
@@ -12,10 +12,12 @@ s.waitForBoot{
     var buttons = (
         shutterAdd: 48,
         shutterClear: 49,
-		tuiAdd: 50,
-		tuiClear: 51
+        tuiAdd: 50,
+        tuiClear: 51,
+        spadefootAdd: 53,
+        spadefootClear: 54
     );
-	var setupShave;
+    var setupShave;
 
     // Load Samples
     var basePath = "/home/ted/tinwings/samples";
@@ -25,9 +27,10 @@ s.waitForBoot{
     var loadSample = { |name| Buffer.read(s, getPath.value(name)) };
     var buffers = ();
     buffers.shutter = loadSample.("shutter_manual.wav");
-	buffers.tui = loadSample.("tui.wav");
+    buffers.tui = loadSample.("tui.wav");
+    buffers.spadefoot = loadSample.("spadefoot.wav");
     ~buffers = buffers;
-	~buttons = buttons;
+    ~buttons = buttons;
 
     /*
     * SYNTH DEFS
@@ -60,8 +63,8 @@ s.waitForBoot{
         var clearLoops = {
             loopGroup.freeAll;
         };
-        MIDIdef.noteOn(\addShutter, startLoop, noteNum: ~buttons.shutterAdd);
-        MIDIdef.noteOn(\clearShutter, clearLoops, noteNum: ~buttons.shutterClear);
+        MIDIdef.noteOn(\addShutter, startLoop, noteNum: ~buttons.shutterAdd).permanent_(true);
+        MIDIdef.noteOn(\clearShutter, clearLoops, noteNum: ~buttons.shutterClear).permanent_(true);
     }.value;
 
     // Tui Track
@@ -77,11 +80,32 @@ s.waitForBoot{
 
         };
         var clearLoops = {
-			"tui clear".postln;
+            "tui clear".postln;
             loopGroup.freeAll;
         };
-        MIDIdef.noteOn(\addTui, startLoop, noteNum: ~buttons.tuiAdd);
-        MIDIdef.noteOn(\clearTui, clearLoops, noteNum: ~buttons.tuiClear);
+        MIDIdef.noteOn(\addTui, startLoop, noteNum: ~buttons.tuiAdd).permanent_(true);
+        MIDIdef.noteOn(\clearTui, clearLoops, noteNum: ~buttons.tuiClear).permanent_(true);
     }.value;
+
+     // Spadefoot Track
+    {
+        var loopGroup = Group.new();
+        var startLoop = { |val, nn, chan|
+            var pan;
+            "startLoop".postln;
+            pan = rrand(-1.0, 1/0);
+            pan.postln;
+
+            x = Synth.new(\loopShave, [\buf, ~buffers.spadefoot, \length, rrand(0.5, 1.0), \pan, rrand(-1.0, 1.0), \amp], target: loopGroup);
+
+        };
+        var clearLoops = {
+            "spadefoot clear".postln;
+            loopGroup.freeAll;
+        };
+        MIDIdef.noteOn(\addSpade, startLoop, noteNum: ~buttons.spadefootAdd).permanent_(true);
+        MIDIdef.noteOn(\clearSpade, clearLoops, noteNum: ~buttons.spadefootClear).permanent_(true);
+    }.value;
+
 
 }
