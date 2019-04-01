@@ -10,12 +10,12 @@ s.waitForBoot{
 s.waitForBoot{
     // A map of MIDI note values to event names.
     var buttons = (
-        shutterAdd: 48,
-        shutterClear: 49,
-        tuiAdd: 50,
-        tuiClear: 51,
-        spadefootAdd: 53,
-        spadefootClear: 54
+        shutterAdd: (symbol: \shutterAdd, note: 48),
+        shutterClear: (symbol: \shutterClear, note: 49),
+        tuiAdd: (symbol: \tuiAdd, note: 50), 
+        tuiClear: (symbol: \tuiClear, note:51),
+        spadefootAdd: (symbol: \spade, note: 53),
+        spadefootClear: (symbol: \spadefootClear, note: 54)
     );
     var setupShave;
 
@@ -47,64 +47,53 @@ s.waitForBoot{
         Out.ar(0, sig);
     }).add;
 
-
-    // Shutter track
     {
-        var loopGroup = Group.new();
-        var startLoop = { |val, nn, chan|
-            var pan;
-            "startLoop".postln;
-            pan = rrand(-1.0, 1/0);
-            pan.postln;
+        var createShaveTrack = { arg buffer, buttons, group={group.new}, amp=0.5;
+            var loopGroup = group;
+            var addKey = buttons.at(\create).symbol, clearKey = buttons.at(\clear).symbol;
+            var addNote = buttons.at(\create).note, clearNote = buttons.at(\clear).note;
+            var startLoop = { |val, nn, chan|
+                var pan;
+                addKey.postln;   
+                pan = rrand(-1.0, 1/0);
+                pan.postln;
 
-            x = Synth.new(\loopShave, [\buf, ~buffers.shutter, \length, rrand(0.5, 1.0), \pan, rrand(-1.0, 1.0)], target: loopGroup);
+                x = Synth.new(\loopShave, [\buf, buffer, \length, rrand(0.5, 1.0), \pan, rrand(-1.0, 1.0), \amp: amp], target: loopGroup);
 
-        };
-        var clearLoops = {
-            loopGroup.freeAll;
-        };
-        MIDIdef.noteOn(\addShutter, startLoop, noteNum: ~buttons.shutterAdd).permanent_(true);
-        MIDIdef.noteOn(\clearShutter, clearLoops, noteNum: ~buttons.shutterClear).permanent_(true);
-    }.value;
-
-    // Tui Track
-    {
-        var loopGroup = Group.new();
-        var startLoop = { |val, nn, chan|
-            var pan;
-            "startLoop".postln;
-            pan = rrand(-1.0, 1/0);
-            pan.postln;
-
-            x = Synth.new(\loopShave, [\buf, ~buffers.tui, \length, rrand(0.5, 1.0), \pan, rrand(-1.0, 1.0), \amp], target: loopGroup);
+            };
+            var clearLoops = {
+                clearKey.postln;
+                loopGroup.freeAll;
+            };
+            MIDIdef.noteOn(addKey, startLoop, noteNum: addNote).permanent_(true);
+            MIDIdef.noteOn(clearKey, clearLoops, noteNum: clearNote).permanent_(true);
 
         };
-        var clearLoops = {
-            "tui clear".postln;
-            loopGroup.freeAll;
-        };
-        MIDIdef.noteOn(\addTui, startLoop, noteNum: ~buttons.tuiAdd).permanent_(true);
-        MIDIdef.noteOn(\clearTui, clearLoops, noteNum: ~buttons.tuiClear).permanent_(true);
-    }.value;
 
-     // Spadefoot Track
-    {
-        var loopGroup = Group.new();
-        var startLoop = { |val, nn, chan|
-            var pan;
-            "startLoop".postln;
-            pan = rrand(-1.0, 1/0);
-            pan.postln;
-
-            x = Synth.new(\loopShave, [\buf, ~buffers.spadefoot, \length, rrand(0.5, 1.0), \pan, rrand(-1.0, 1.0), \amp], target: loopGroup);
-
-        };
-        var clearLoops = {
-            "spadefoot clear".postln;
-            loopGroup.freeAll;
-        };
-        MIDIdef.noteOn(\addSpade, startLoop, noteNum: ~buttons.spadefootAdd).permanent_(true);
-        MIDIdef.noteOn(\clearSpade, clearLoops, noteNum: ~buttons.spadefootClear).permanent_(true);
+        createShaveTrack.(
+                buffer: ~buffers.shutter,
+                buttons: (
+                    create: ~buttons.shutterAdd,
+                    clear: ~buttons.shutterClear
+                ),
+                group: Group.new
+        );
+        createShaveTrack.(
+                buffer: ~buffers.tui,
+                buttons: (
+                    create: ~buttons.tuiAdd,
+                    clear: ~buttons.tuiClear
+                ),
+                group: Group.new
+        );
+        createShaveTrack.(
+                buffer: ~buffers.spadefoot,
+                buttons: (
+                    create: ~buttons.spadefootAdd,
+                    clear: ~buttons.spadefootClear
+                ),
+                group: Group.new
+        );
     }.value;
 
 
