@@ -42,26 +42,19 @@ s.waitForBoot{
 
     // Shutter track
     fork {
-        var startLoop, loops, clearLoops;
-        loops = List.new();
+        var startLoop, shutterGroup, clearLoops;
+        shutterGroup = Group.new();
         startLoop = { |val, nn, chan|
             var pan;
             "startLoop".postln;
             pan = rrand(-1.0, 1/0);
             pan.postln;
 
-            x = Synth.new(\loopShave, [\buf, ~buffers.shutter, \length, rrand(0.5, 1.0), \pan, rrand(-1.0, 1.0)]);
-            loops.add(x);
-            loops.size.postln;
+            x = Synth.new(\loopShave, [\buf, ~buffers.shutter, \length, rrand(0.5, 1.0), \pan, rrand(-1.0, 1.0)], target: shutterGroup);
+
         };
         clearLoops = {
-            "clear".postln;
-            loops.do{
-                arg loop;
-                loop.free;
-            };
-            loops.clear;
-            loops.size.postln;
+            shutterGroup.freeAll;
         };
         MIDIdef.noteOn(\startShutter, startLoop, noteNum: buttons.shutterAdd);
         MIDIdef.noteOn(\clearShutters, clearLoops, noteNum: buttons.shutterClear);
