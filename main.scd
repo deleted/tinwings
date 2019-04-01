@@ -1,17 +1,21 @@
 // Start server and MIDI
 s.quit;
 s.boot;
-MIDIClient.init;
-MIDIIn.connectAll;
-
 
 s.waitForBoot{
+	MIDIClient.init;
+	MIDIIn.connectAll;
+};
 
+s.waitForBoot{
     // A map of MIDI note values to event names.
     var buttons = (
         shutterAdd: 48,
-        shutterClear: 49
+        shutterClear: 49,
+		tuiAdd: 50,
+		tuiClear: 51
     );
+	var setupShave;
 
     // Load Samples
     var basePath = "/home/ted/tinwings/samples";
@@ -19,10 +23,11 @@ s.waitForBoot{
         basePath ++ "/" ++ fileName;
     };
     var loadSample = { |name| Buffer.read(s, getPath.value(name)) };
-
     var buffers = ();
     buffers.shutter = loadSample.("shutter_manual.wav");
+	buffers.tui = loadSample.("tui.wav");
     ~buffers = buffers;
+	~buttons = buttons;
 
     /*
     * SYNTH DEFS
@@ -41,23 +46,42 @@ s.waitForBoot{
 
 
     // Shutter track
-    fork {
-        var startLoop, shutterGroup, clearLoops;
-        shutterGroup = Group.new();
-        startLoop = { |val, nn, chan|
+    {
+        var loopGroup = Group.new();
+        var startLoop = { |val, nn, chan|
             var pan;
             "startLoop".postln;
             pan = rrand(-1.0, 1/0);
             pan.postln;
 
-            x = Synth.new(\loopShave, [\buf, ~buffers.shutter, \length, rrand(0.5, 1.0), \pan, rrand(-1.0, 1.0)], target: shutterGroup);
+            x = Synth.new(\loopShave, [\buf, ~buffers.shutter, \length, rrand(0.5, 1.0), \pan, rrand(-1.0, 1.0)], target: loopGroup);
 
         };
-        clearLoops = {
-            shutterGroup.freeAll;
+        var clearLoops = {
+            loopGroup.freeAll;
         };
-        MIDIdef.noteOn(\startShutter, startLoop, noteNum: buttons.shutterAdd);
-        MIDIdef.noteOn(\clearShutters, clearLoops, noteNum: buttons.shutterClear);
-    }
+        MIDIdef.noteOn(\addShutter, startLoop, noteNum: ~buttons.shutterAdd);
+        MIDIdef.noteOn(\clearShutter, clearLoops, noteNum: ~buttons.shutterClear);
+    }.value;
+
+    // Tui Track
+    {
+        var loopGroup = Group.new();
+        var startLoop = { |val, nn, chan|
+            var pan;
+            "startLoop".postln;
+            pan = rrand(-1.0, 1/0);
+            pan.postln;
+
+            x = Synth.new(\loopShave, [\buf, ~buffers.tui, \length, rrand(0.5, 1.0), \pan, rrand(-1.0, 1.0), \amp], target: loopGroup);
+
+        };
+        var clearLoops = {
+			"tui clear".postln;
+            loopGroup.freeAll;
+        };
+        MIDIdef.noteOn(\addTui, startLoop, noteNum: ~buttons.tuiAdd);
+        MIDIdef.noteOn(\clearTui, clearLoops, noteNum: ~buttons.tuiClear);
+    }.value;
 
 }
