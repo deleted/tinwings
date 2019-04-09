@@ -10,12 +10,12 @@ s.waitForBoot{
 s.waitForBoot{
     // A map of MIDI note values to event names.
     var buttons = (
-        shutterAdd: (symbol: \shutterAdd, note: 48),
-        shutterClear: (symbol: \shutterClear, note: 49),
-        tuiAdd: (symbol: \tuiAdd, note: 50), 
-        tuiClear: (symbol: \tuiClear, note:51),
-        spadefootAdd: (symbol: \spade, note: 53),
-        spadefootClear: (symbol: \spadefootClear, note: 54)
+        shutterAdd: (symbol: \shutterAdd, note: 48, cc: 0),
+        shutterClear: (symbol: \shutterClear, note: 49, cc: 1),
+        tuiAdd: (symbol: \tuiAdd, note: 50, cc: 2), 
+        tuiClear: (symbol: \tuiClear, note:51, cc: 3),
+        spadefootAdd: (symbol: \spade, note: 53, cc: 4),
+        spadefootClear: (symbol: \spadefootClear, note: 54, cc: 5)
     );
     var setupShave;
 
@@ -52,6 +52,7 @@ s.waitForBoot{
             var loopGroup = group;
             var addKey = buttons.at(\create).symbol, clearKey = buttons.at(\clear).symbol;
             var addNote = buttons.at(\create).note, clearNote = buttons.at(\clear).note;
+            var addCC = buttons.at(\create).cc, clearCC = buttons.at(\clear).cc;
             var startLoop = { |val, nn, chan|
                 var pan;
                 addKey.postln;   
@@ -67,6 +68,8 @@ s.waitForBoot{
             };
             MIDIdef.noteOn(addKey, startLoop, noteNum: addNote).permanent_(true);
             MIDIdef.noteOn(clearKey, clearLoops, noteNum: clearNote).permanent_(true);
+            MIDIdef.cc(addKey ++ \cc, startLoop, ccNum: addCC);
+            MIDIdef.cc(clearKey ++ \cc, clearLoops, ccNum: clearCC);
 
         };
 
